@@ -7,7 +7,6 @@ var index = 0;
 
 var pointsArray = [];
 var normalsArray = [];
-var indexArray = [];
 
 var near = -10;
 var far = 10;
@@ -24,16 +23,12 @@ var bottom = -3.0;
 var sphereRadius = 0.4;
 var sparkVelocities;
 var sparkPositions;
+var sparkLives;
 var startIndex = 0;
 var startIndexArrayLength = 0;
 
 var gravity = 0.003;
 
-var va = vec4(0.0, 0.0, -1.0,1);
-var vb = vec4(0.0, 0.942809, 0.333333, 1);
-var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
-var vd = vec4(0.816497, -0.471405, 0.333333,1);
-    
 var lightPosition = vec4(1.0, 1.0, 1.0, 0.0 );
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -53,8 +48,13 @@ var eye;
 var at = vec3(0.0, 0.0, 0.0);
 var up = vec3(0.0, 1.0, 0.0);
 
+var nBuffer;
+var vBuffer;
+
 function makeSphere(r, bands, cx, cy, cz) {
 	var initIndex = index;
+	var norms = [];
+	var points = [];
     for (var latNumber = 0; latNumber <= bands; latNumber++) {
 		var theta = latNumber * Math.PI / bands;
 		var sinTheta = Math.sin(theta);
@@ -72,32 +72,52 @@ function makeSphere(r, bands, cx, cy, cz) {
 			// normalsArray.push(cx + x);
 			// normalsArray.push(cy + y);
 			// normalsArray.push(cz + z);
-			normalsArray.push(vec4(
+			norms.push(vec4(
 							  cx + x,
 			                  cy + y,
 			                  cz + z, 1.0));
-			pointsArray.push(vec4(
+			points.push(vec4(
 							 cx - r * x,
 							 cy - r * y,
 		                     cz - r * z, 1.0));
-			index += 1;
 		}
 		
 	}
-	
     for (var latNumber = 0; latNumber < bands; latNumber++) {
 		for (var longNumber = 0; longNumber < bands; longNumber++) {
-			var first = (latNumber * (bands + 1)) + longNumber + initIndex;
+			var first = (latNumber * (bands + 1)) + longNumber;
 			var second = first + bands + 1;
-			indexArray.push(first);
-			indexArray.push(second);
-			indexArray.push(first + 1);
+			// indexArray.push(first);
+			// indexArray.push(second);
+			// indexArray.push(first + 1);
 
-			indexArray.push(second);
-			indexArray.push(second + 1);
-			indexArray.push(first + 1);
+			// indexArray.push(second);
+			// indexArray.push(second + 1);
+			// indexArray.push(first + 1);
+			normalsArray.push(norms[first]);
+			normalsArray.push(norms[second]);
+			normalsArray.push(norms[first + 1]);
+			
+			normalsArray.push(norms[second]);
+			normalsArray.push(norms[second + 1]);
+			normalsArray.push(norms[first + 1]);
+			
+			pointsArray.push(points[first]);
+			pointsArray.push(points[second]);
+			pointsArray.push(points[first + 1]);
+			
+			pointsArray.push(points[second]);
+			pointsArray.push(points[second + 1]);
+			pointsArray.push(points[first + 1]);
+			
+			index += 6;
 		}
     }
+	gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
+	gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
+	
+	gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
 }
 
 window.onload = function init()
@@ -120,17 +140,15 @@ window.onload = function init()
     
 	sparkVelocities = [];
 	sparkPositions = [];
+	sparkLives = [];
 	
     ambientProduct = mult(lightAmbient, materialAmbient);
     diffuseProduct = mult(lightDiffuse, materialDiffuse);
     specularProduct = mult(lightSpecular, materialSpecular);
 
-    makeSphere(sphereRadius, 4, 0, 0, 0);
-	startIndex = index;
-	startIndexArrayLength = indexArray.length;
 	//tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
 
-    var nBuffer = gl.createBuffer();
+    nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
     gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
     
@@ -138,17 +156,16 @@ window.onload = function init()
     gl.vertexAttribPointer( vNormal, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vNormal);
 
-	var iBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(indexArray), gl.STATIC_DRAW);
-
-    var vBuffer = gl.createBuffer();
+    vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
     
     var vPosition = gl.getAttribLocation( program, "vPosition");
     gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
+	
+	makeSphere(sphereRadius, 4, 0, 0, 0);
+	startIndex = index;
     
     modelViewMatrixLoc = gl.getUniformLocation( program, "modelViewMatrix" );
     projectionMatrixLoc = gl.getUniformLocation( program, "projectionMatrix" );
@@ -165,29 +182,20 @@ window.onload = function init()
        "shininess"),materialShininess );
 	
 	document.getElementById("btnFirework").onclick = function(){
-		normalsArray = normalsArray.slice(0, startIndex);
-		index = normalsArray.length;
-		pointsArray = pointsArray.slice(0, startIndex);
-		indexArray = indexArray.slice(0, startIndexArrayLength);
-		sparkPositions = [];
-		sparkVelocities = [];
+		// normalsArray = normalsArray.slice(0, startIndex);
+		// index = normalsArray.length;
+		// pointsArray = pointsArray.slice(0, startIndex);
+		if (sparkPositions.length == 0) {
+			makeSphere(0.3, 2, 0, 0, 0);
+		}
         for (var i = 0; i < 8; i++) {
-			makeSphere(0.3, 4, 0, 0, 0);
 			var v = 0.1;
 			var xx = (Math.random() < 0.5 ? -1 : 1) * Math.random() * v;
 			var yy = (Math.random() < 0.5 ? -1 : 1) * Math.random() * v;
 			var zz = (Math.random() < 0.5 ? -1 : 1) * Math.random() * v;
 			sparkPositions.push(vec3(0, 0, 0));
 			sparkVelocities.push(vec3(xx, yy, zz));
-			
-			gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
-			gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
-
-			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
-			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(indexArray), gl.STATIC_DRAW);
-
-			gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-			gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
+			sparkLives.push(Math.random()*1.5 + 1);
 		}
     };
 	
@@ -207,15 +215,22 @@ function render() {
     projectionMatrix = ortho(left, right, bottom, ytop, near, far);
 	gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
-	gl.drawElements(gl.TRIANGLES, startIndexArrayLength, gl.UNSIGNED_BYTE, 0);
+	for( var i=0; i<startIndex; i+=3) 
+        gl.drawArrays( gl.TRIANGLES, i, 3 );
+	// gl.drawElements(gl.TRIANGLES, startIndexArrayLength, gl.UNSIGNED_BYTE, 0);
+	var removeSparks = []
 	for (var i = 0; i < sparkVelocities.length; i++) {
-		var v = sparkVelocities[i];
+		var vv = sparkVelocities[i];
 		var p = sparkPositions[i];
-		var xx = p[0] + v[0];
-		var yy = p[1] + v[1];
-		var zz = p[2] + v[2];
+		var xx = p[0] + vv[0];
+		var yy = p[1] + vv[1];
+		var zz = p[2] + vv[2];
 		sparkVelocities[i][1] -= gravity;
 		sparkPositions[i] = vec3(xx, yy, zz);
+		sparkLives[i] -= 0.02;
+		if (sparkLives[i] < 0) {
+			removeSparks.push(i);
+		}
 		var t = mat4 (1.0, 0.0, 0.0, xx,
 				   0.0, 1.0, 0.0, yy,
 				   0.0, 0.0, 1.0, zz,
@@ -223,7 +238,15 @@ function render() {
 		modelViewMatrix = mult(looking, t);
 	
 		gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
-		gl.drawElements(gl.TRIANGLES, startIndexArrayLength, gl.UNSIGNED_BYTE, startIndexArrayLength + (startIndexArrayLength * i) );
+		for( var j=startIndex; j<index; j+=3) 
+			gl.drawArrays( gl.TRIANGLES, j, 3 );
+		//gl.drawElements(gl.TRIANGLES, startIndexArrayLength, gl.UNSIGNED_BYTE, startIndexArrayLength + (startIndexArrayLength * i) );
+	}
+	for (var i = removeSparks.length - 1; i >= 0; i--) {
+		var ind = removeSparks[i];
+		sparkLives.splice(ind, 1);
+		sparkVelocities.splice(ind, 1);
+		sparkPositions.splice(ind, 1);
 	}
     window.requestAnimFrame(render);
 }
