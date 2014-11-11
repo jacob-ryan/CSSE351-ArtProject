@@ -1,4 +1,3 @@
-//つ ◕_◕ ༽つ
 
 var canvas;
 var gl;
@@ -44,6 +43,9 @@ var materialDiffuse = vec4( 0.8, 0.8, 0.8, 1.0 );
 var materialSpecular = vec4( 0.4, 0.4, 0.4, 1.0 );
 var materialShininess = 80.0;
 
+var ctm;
+var ambientColor, diffuseColor, specularColor;
+
 var modelViewMatrix, projectionMatrix;
 var modelViewMatrixLoc, projectionMatrixLoc;
 var eye;
@@ -55,7 +57,6 @@ var vBuffer;
 
 var colorLoc;
 var lightedLoc;
-
 var aspect;
 var camPos = vec3(0, 0, -1);
 var camSpeed = 0.025;
@@ -131,6 +132,19 @@ function makeSphere(r, bands, cx, cy, cz) {
 
 function makeCube(size, cx, cy, cz) {
 	var hs = size / 2; // half-size
+	var n = vec4(0, 0, 0, 1);
+	var v1 = vec4(0, 0, 0, 1);
+	var v2 = vec4(0, 0, 0, 1);
+	var p1 = vec3(0, 0, 0);
+	var p2 = vec3(0, 0, 0);
+	var p3 = vec3(0, 0, 0);
+	
+	p1 = vec3(cx + hs, cy + hs, cz - hs);
+	p2 = vec3(cx - hs, cy + hs, cz - hs);
+	p3 = vec3(cx - hs, cy - hs, cz - hs);
+	v1 = vec4(p1[0] - p2[0], p1[1] - p2[1], p1[2] - p2[2], 1);
+	v2 = vec4(p2[0] - p3[0], p2[1] - p3[1], p2[2] - p3[2], 1);
+	n = vec4(cross(v1, v2), 1);
 	//front
 	pointsArray.push(vec4(cx + hs, cy + hs, cz - hs));
 	pointsArray.push(vec4(cx - hs, cy + hs, cz - hs));
@@ -138,6 +152,13 @@ function makeCube(size, cx, cy, cz) {
 	pointsArray.push(vec4(cx - hs, cy - hs, cz - hs));
 	pointsArray.push(vec4(cx + hs, cy - hs, cz - hs));
 	pointsArray.push(vec4(cx + hs, cy + hs, cz - hs));
+	p1 = vec3(cx + hs, cy + hs, cz - hs);
+	p2 = vec3(cx - hs, cy + hs, cz - hs);
+	p3 = vec3(cx - hs, cy - hs, cz - hs);
+	v1 = vec4(p1[0] - p2[0], p1[1] - p2[1], p1[2] - p2[2], 1);
+	v2 = vec4(p2[0] - p3[0], p2[1] - p3[1], p2[2] - p3[2], 1);
+	n = vec4(cross(v1, v2), 1);
+	//for (var i = 0; i < 6; i++) { normalsArray.push(n); }
 	//back
 	pointsArray.push(vec4(cx - hs, cy - hs, cz + hs));
 	pointsArray.push(vec4(cx + hs, cy - hs, cz + hs));
@@ -145,6 +166,13 @@ function makeCube(size, cx, cy, cz) {
 	pointsArray.push(vec4(cx + hs, cy + hs, cz + hs));
 	pointsArray.push(vec4(cx - hs, cy + hs, cz + hs));
 	pointsArray.push(vec4(cx - hs, cy - hs, cz + hs));
+	p1 = vec3(cx - hs, cy - hs, cz + hs);
+	p2 = vec3(cx + hs, cy - hs, cz + hs);
+	p3 = vec3(cx + hs, cy + hs, cz + hs);
+	v1 = vec4(p1[0] - p2[0], p1[1] - p2[1], p1[2] - p2[2], 1);
+	v2 = vec4(p2[0] - p3[0], p2[1] - p3[1], p2[2] - p3[2], 1);
+	n = vec4(cross(v2, v1), 1);
+	//for (var i = 0; i < 6; i++) { normalsArray.push(n); }
 	//top
 	pointsArray.push(vec4(cx + hs, cy + hs, cz - hs));
 	pointsArray.push(vec4(cx - hs, cy + hs, cz - hs));
@@ -306,7 +334,7 @@ function render() {
     
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     
-    var eye = vec3(radius*Math.sin(0)*Math.cos(phi), 
+    eye = vec3(radius*Math.sin(0)*Math.cos(phi), 
         radius*Math.sin(0)*Math.sin(phi), radius*Math.cos(0));
 	var looking = lookAt(eye, at, up);
 	modelViewMatrix = looking;
@@ -315,6 +343,7 @@ function render() {
 						0.0, 0.0, 1.0, camPos[2],
 						0.0, 0.0, 0.0, 1.0);
 	projectionMatrix = mult(perspective (45.0, aspect, 1, 5*20), camTransform);
+    //projectionMatrix = ortho(left, right, bottom, ytop, near, far);
 	gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
 	gl.uniform4fv (colorLoc, vec4(0.8, 0.8, 0.8, 1.0));
@@ -398,4 +427,29 @@ function render() {
 		sparkCenters.splice(ind, 1);
 	}
     window.requestAnimFrame(render);
+}
+
+function hslToRgb(h, s, l){
+    var r, g, b;
+
+    if(s == 0){
+        r = g = b = l; // achromatic
+    }else{
+        function hue2rgb(p, q, t){
+            if(t < 0) t += 1;
+            if(t > 1) t -= 1;
+            if(t < 1/6) return p + (q - p) * 6 * t;
+            if(t < 1/2) return q;
+            if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+        }
+
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
+    }
+
+    return [r, g, b];
 }
