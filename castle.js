@@ -15,6 +15,7 @@ var cz = 0.0;
 var yaw = 0.0;
 var pitch = 0.0;
 
+var lookingMatrix;
 var modelViewMatrix, projectionMatrix;
 var modelViewMatrixLoc, projectionMatrixLoc;
 var colorLoc;
@@ -79,7 +80,8 @@ var render = function()
 	var eye = vec3(0.0, 0.0, 1.0);
 	var at = vec3(0.0, 0.0, 1.0);
 	var up = vec3(0.0, 1.0, 0.0);
-	modelViewMatrix = lookAt(eye, at, up);
+	lookingMatrix = lookAt(eye, at, up);
+	modelViewMatrix = lookingMatrix;
 	var camTransform = mat4(1.0, 0.0, 0.0, cx,
 							0.0, 1.0, 0.0, cy,
 							0.0, 0.0, 1.0, cz,

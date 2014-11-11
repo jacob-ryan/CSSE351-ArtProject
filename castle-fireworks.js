@@ -73,7 +73,7 @@ var fireworks = function()
 							
 			var rotation = mult (rz, mult(ry, rx));
 							
-			modelViewMatrix = mult(looking, mult(t, mult (rotation, tz1)));
+			modelViewMatrix = mult(lookingMatrix, mult(t, mult (rotation, tz1)));
 			//modelViewMatrix = mult(looking, t);
 		
 			gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
