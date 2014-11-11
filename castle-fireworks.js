@@ -1,5 +1,6 @@
 var fireworks = function()
 {	
+	var gravity = 0.01;
 	var spawnTimerMax = 200;
 	var spawnTimerMin = 100;
 	var spawnTimer = 0;
@@ -72,7 +73,7 @@ var fireworks = function()
 							
 			var rotation = mult (rz, mult(ry, rx));
 							
-			modelViewMatrix = mult(looking, mult(t, mult (rotation, tz1)));
+			modelViewMatrix = mult(lookingMatrix, mult(t, mult (rotation, tz1)));
 			//modelViewMatrix = mult(looking, t);
 		
 			gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
@@ -93,10 +94,6 @@ var fireworks = function()
 			sparkAngles.splice(ind, 1);
 			sparkCenters.splice(ind, 1);
 		}
-	};
-	
-	return {
-		render: render
 	};
 	
 	function spawnFirework(n) {
@@ -120,4 +117,8 @@ var fireworks = function()
 			sparkCenters.push(center);
 		}
 	}
+	
+	return {
+		render: render
+	};
 }();
