@@ -34,18 +34,15 @@ var startIndexArrayLength = 0;
 
 var gravity = 0.003;
 
-var lightPosition = vec4(1.0, 1.0, 1.0, 0.0 );
+var lightPosition = vec4(1.0, 1.0, 1.0, 1.0 );
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
 var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
-var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
-var materialSpecular = vec4( 1.0, 0.8, 0.0, 1.0 );
-var materialShininess = 100.0;
-
-var ctm;
-var ambientColor, diffuseColor, specularColor;
+var materialDiffuse = vec4( 0.8, 0.8, 0.8, 1.0 );
+var materialSpecular = vec4( 0.4, 0.4, 0.4, 1.0 );
+var materialShininess = 80.0;
 
 var modelViewMatrix, projectionMatrix;
 var modelViewMatrixLoc, projectionMatrixLoc;
@@ -58,7 +55,10 @@ var vBuffer;
 
 var colorLoc;
 var lightedLoc;
+
 var aspect;
+var camPos = vec3(0, 0, -1);
+var camSpeed = 0.025;
 
 function makeSphere(r, bands, cx, cy, cz) {
 	var initIndex = index;
@@ -230,9 +230,10 @@ window.onload = function init()
     gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
 	
-	//makeSphere(sphereRadius, 4, 0, 0, -1);
-	makeCube(0.01, 0, 0, -1);
+	makeSphere(sphereRadius, 4, 0, 0, -2);
+	//makeCube(0.2, 0, 0, -2);
 	startIndex = index;
+	makeCube(0.05, 0, 0, 0);
     
     modelViewMatrixLoc = gl.getUniformLocation( program, "modelViewMatrix" );
     projectionMatrixLoc = gl.getUniformLocation( program, "projectionMatrix" );
@@ -250,31 +251,53 @@ window.onload = function init()
     gl.uniform1f( gl.getUniformLocation(program, 
        "shininess"),materialShininess );
 	
-	document.getElementById("btnFirework").onclick = function(){
-		// normalsArray = normalsArray.slice(0, startIndex);
-		// index = normalsArray.length;
-		// pointsArray = pointsArray.slice(0, startIndex);
-		if (sparkPositions.length == 0) {
-			//makeSphere(0.1, 2, 0, 0, 0);
-			makeCube(0.05, 0, 0, 0);
+	document.addEventListener('keydown', function(event) {
+		switch (event.keyCode) {
+			case 37: //left
+			camPos[0] -= camSpeed;
+			break;
+			
+			case 38: //up
+			camPos[2] += camSpeed;
+			break;
+			
+			case 39: //right
+			camPos[0] += camSpeed;
+			break;
+			
+			case 40: //down
+			camPos[2] -= camSpeed;
+			break;
+			
+			case 32: //space
+			var hue = Math.random();
+			var center = vec3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
+			var lc = hslToRgb(hue, 1, Math.random() * 0.4 + 0.3);
+			console.log(lc);
+			lightDiffuse = vec4( lc[0], lc[1], lc[2], 1.0 );
+			lightPosition = vec4(center[0], center[1], center[2], 0.0 );
+			var diffuseProduct = mult(lightDiffuse, materialDiffuse);
+			gl.uniform4fv( gl.getUniformLocation(program, 
+			   "diffuseProduct"),flatten(diffuseProduct) );
+			gl.uniform4fv( gl.getUniformLocation(program, 
+			   "lightPosition"),flatten(lightPosition) );
+			for (var i = 0; i < 50; i++) {
+				var v = 0.05;
+				var xx = (Math.random() < 0.5 ? -1 : 1) * Math.random() * v;
+				var yy = (Math.random() < 0.5 ? -1 : 1) * Math.random() * v * 1.35;
+				var zz = (Math.random() < 0.5 ? -1 : 1) * Math.random() * v;
+				sparkPositions.push(vec3(0, 0, 0));
+				sparkVelocities.push(vec3(xx, yy, zz));
+				sparkLives.push(Math.random()*1.5 + 1);
+				sparkScales.push(Math.random() * 2 + 1);
+				var c = hslToRgb(hue, Math.random() * 0.2 + 0.8, Math.random() * 0.4 + 0.3);
+				sparkColors.push(vec4(c[0], c[1], c[2], 1.0));
+				sparkAngles.push(0);
+				sparkCenters.push(center);
+			}
+			break;
 		}
-		var hue = Math.random();
-        for (var i = 0; i < 50; i++) {
-			var v = 0.05;
-			var xx = (Math.random() < 0.5 ? -1 : 1) * Math.random() * v;
-			var yy = (Math.random() < 0.5 ? -1 : 1) * Math.random() * v * 1.35;
-			var zz = (Math.random() < 0.5 ? -1 : 1) * Math.random() * v;
-			sparkPositions.push(vec3(0, 0, 0));
-			sparkVelocities.push(vec3(xx, yy, zz));
-			sparkLives.push(Math.random()*1.5 + 1);
-			sparkScales.push(Math.random() * 2 + 1);
-			var c = hslToRgb(hue, Math.random() * 0.2 + 0.8, Math.random() * 0.4 + 0.3);
-			sparkColors.push(vec4(c[0], c[1], c[2], 1.0));
-			sparkAngles.push(0);
-			sparkCenters.push(vec3(0, 0, 0));
-		}
-    };
-	
+	});
     render();
 }
 
@@ -283,19 +306,18 @@ function render() {
     
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     
-    eye = vec3(radius*Math.sin(0)*Math.cos(phi), 
+    var eye = vec3(radius*Math.sin(0)*Math.cos(phi), 
         radius*Math.sin(0)*Math.sin(phi), radius*Math.cos(0));
 	var looking = lookAt(eye, at, up);
 	modelViewMatrix = looking;
-	var cameraPos =mat4(1.0, 0.0, 0.0, 0,
-						0.0, 1.0, 0.0, 0,
-						0.0, 0.0, 1.0, -1,
+	var camTransform =mat4(1.0, 0.0, 0.0, camPos[0],
+						0.0, 1.0, 0.0, camPos[1],
+						0.0, 0.0, 1.0, camPos[2],
 						0.0, 0.0, 0.0, 1.0);
-	projectionMatrix = mult(perspective (45.0, aspect, 1, 5*20), cameraPos);
-    //projectionMatrix = ortho(left, right, bottom, ytop, near, far);
+	projectionMatrix = mult(perspective (45.0, aspect, 1, 5*20), camTransform);
 	gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
-	gl.uniform4fv (colorLoc, vec4(1.0, 0.5, 0.3, 1.0));
+	gl.uniform4fv (colorLoc, vec4(0.8, 0.8, 0.8, 1.0));
 	gl.uniform1i (lightedLoc, 1);
 	for( var i=0; i<startIndex; i+=3) 
         gl.drawArrays( gl.TRIANGLES, i, 3 );
@@ -342,15 +364,14 @@ function render() {
 				   s[2], c[2], 0.0, 0.0,
 				   0.0, 0.0, 1.0, 0.0,
 				   0.0, 0.0, 0.0, 1.0);
-		
 		var t = mat4 (scale, 0.0, 0.0, xx + center[0],
 				   0.0, scale, 0.0, yy + center[1],
 				   0.0, 0.0, scale, zz + center[2],
 				   0.0, 0.0, 0.0, 1.0);
 		
-		var tz1 = mat4 (1.0, 0.0, 0.0, -center[0],
-						0.0, 1.0, 0.0, -center[1],
-						0.0, 0.0, 1.0, -center[2],
+		var tz1 = mat4 (1.0, 0.0, 0.0, 0,
+						0.0, 1.0, 0.0, 0,
+						0.0, 0.0, 1.0, 0,
 						0.0, 0.0, 0.0, 1.0);
 						
 		var rotation = mult (rz, mult(ry, rx));
@@ -377,29 +398,4 @@ function render() {
 		sparkCenters.splice(ind, 1);
 	}
     window.requestAnimFrame(render);
-}
-
-function hslToRgb(h, s, l){
-    var r, g, b;
-
-    if(s == 0){
-        r = g = b = l; // achromatic
-    }else{
-        function hue2rgb(p, q, t){
-            if(t < 0) t += 1;
-            if(t > 1) t -= 1;
-            if(t < 1/6) return p + (q - p) * 6 * t;
-            if(t < 1/2) return q;
-            if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-            return p;
-        }
-
-        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-        var p = 2 * l - q;
-        r = hue2rgb(p, q, h + 1/3);
-        g = hue2rgb(p, q, h);
-        b = hue2rgb(p, q, h - 1/3);
-    }
-
-    return [r, g, b];
 }
