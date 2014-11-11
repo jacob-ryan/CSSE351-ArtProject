@@ -1,4 +1,4 @@
-//
+// つ ◕_◕ ༽つ 
 // castle.js
 // CSSE 351 - Computer Graphics
 // Final Art Project
@@ -31,7 +31,7 @@ var vBuffer;
 var fireworkIndex;
 var index = 0;
 
-<<<<<<< HEAD
+
 var pointsArray = [];
 var normalsArray = [];
 
@@ -50,8 +50,6 @@ function makeCastle() {
     gl.bufferData(gl.ARRAY_BUFFER, flatten(normArray), gl.STATIC_DRAW);
 }
 
-=======
->>>>>>> FETCH_HEAD
 var init = function()
 {
 	canvas = document.getElementById("gl-canvas");
