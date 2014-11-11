@@ -36,7 +36,10 @@ var ocean = function()
 			}
 		}
 		
-		//var index = numCastlePoints;
+		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+		gl.bufferSubData(gl.ARRAY_BUFFER, castleByteOffset, flatten(points));
+		
+		gl.drawArrays(gl.TRIANGLES, castleByteOffset, points.length);
 	};
 	
 	var sample = function(x, y)
