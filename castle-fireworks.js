@@ -1,5 +1,6 @@
 var fireworks = function()
 {	
+	var gravity = 0.01;
 	var spawnTimerMax = 200;
 	var spawnTimerMin = 100;
 	var spawnTimer = 0;
@@ -95,10 +96,6 @@ var fireworks = function()
 		}
 	};
 	
-	return {
-		render: render
-	};
-	
 	function spawnFirework(n) {
 		var hue = Math.random();
 		var center = vec3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
@@ -120,4 +117,8 @@ var fireworks = function()
 			sparkCenters.push(center);
 		}
 	}
+	
+	return {
+		render: render
+	};
 }();

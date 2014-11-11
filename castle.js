@@ -19,20 +19,15 @@ var modelViewMatrix, projectionMatrix;
 var modelViewMatrixLoc, projectionMatrixLoc;
 var colorLoc;
 var lightedLoc;
-var at = vec3(0.0, 0.0, 0.0);
-var up = vec3(0.0, 1.0, 0.0);
 
-var lightPosition = vec4(1.0, 1.0, 1.0, 1.0 );
-var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
-var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
-var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
+var lightPosition = vec4(1.0, 1.0, 1.0, 1.0);
+var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
+var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
+var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
 
 var nBuffer;
 var vBuffer;
 var fireworkIndex;
-
-var pointsArray = [];
-var normalsArray = [];
 
 var init = function()
 {
@@ -52,13 +47,7 @@ var init = function()
 
 	var program = initShaders(gl, "vertex-shader", "fragment-shader");
 	gl.useProgram(program);
-	
-	initBuffers();
-	
-	modelViewMatrixLoc = gl.getUniformLocation( program, "modelViewMatrix" );
-    projectionMatrixLoc = gl.getUniformLocation( program, "projectionMatrix" );
-	colorLoc = gl.getUniformLocation (program, "color");
-	lightedLoc = gl.getUniformLocation(program, "lighted");
+	initShaderVariables(program);
 	
 	canvas.requestPointerLock = canvas.requestPointerLock ||
 								canvas.mozRequestPointerLock ||
@@ -86,56 +75,60 @@ var render = function()
 	window.requestAnimationFrame(render);
 	
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-	var eye = vec3(radius*Math.sin(0)*Math.cos(phi), 
-        radius*Math.sin(0)*Math.sin(phi), radius*Math.cos(0));
-	var looking = lookAt(eye, at, up);
-	modelViewMatrix = looking;
-	var camTransform =mat4(1.0, 0.0, 0.0, cx,
-						0.0, 1.0, 0.0, cy,
-						0.0, 0.0, 1.0, cz,
-						0.0, 0.0, 0.0, 1.0);
-	projectionMatrix = mult(perspective (45.0, aspect, 1, 5*20), camTransform);
-	gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
-    gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
+
+	var eye = vec3(0.0, 0.0, 1.0);
+	var at = vec3(0.0, 0.0, 1.0);
+	var up = vec3(0.0, 1.0, 0.0);
+	modelViewMatrix = lookAt(eye, at, up);
+	var camTransform = mat4(1.0, 0.0, 0.0, cx,
+							0.0, 1.0, 0.0, cy,
+							0.0, 0.0, 1.0, cz,
+							0.0, 0.0, 0.0, 1.0);
+	projectionMatrix = mult(perspective(45.0, aspect, 1, 5*20), camTransform);
+	gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
+	gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
+
 	//ocean.render();
 	//castle.render();
 	fireworks.render();
 };
 
-function initBuffers() {
+var initShaderVariables = function(program)
+{
 	nBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
-    
-    var vNormal = gl.getAttribLocation( program, "vNormal" );
-    gl.vertexAttribPointer( vNormal, 4, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( vNormal);
+	gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
+	//gl.bufferData(gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW);
 
-    vBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
-    
-    var vPosition = gl.getAttribLocation( program, "vPosition");
-    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vPosition);
-}
+	var vNormal = gl.getAttribLocation(program, "vNormal");
+	gl.vertexAttribPointer(vNormal, 4, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(vNormal);
 
-function setLighting(mAmbient, mDiffuse, mSpecular) {
+	vBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+	//gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
+
+	var vPosition = gl.getAttribLocation(program, "vPosition");
+	gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(vPosition);
+
+	modelViewMatrixLoc = gl.getUniformLocation(program, "modelViewMatrix");
+	projectionMatrixLoc = gl.getUniformLocation(program, "projectionMatrix");
+	colorLoc = gl.getUniformLocation(program, "color");
+	lightedLoc = gl.getUniformLocation(program, "lighted");
+};
+
+var setLighting = function(mAmbient, mDiffuse, mSpecular)
+{
 	var ambientProduct = mult(lightAmbient, mAmbient);
-    var diffuseProduct = mult(lightDiffuse, mDiffuse);
-    var specularProduct = mult(lightSpecular, mSpecular);
-	
-	gl.uniform4fv( gl.getUniformLocation(program, 
-       "ambientProduct"),flatten(ambientProduct) );
-    gl.uniform4fv( gl.getUniformLocation(program, 
-       "diffuseProduct"),flatten(diffuseProduct) );
-    gl.uniform4fv( gl.getUniformLocation(program, 
-       "specularProduct"),flatten(specularProduct) );	
-    gl.uniform4fv( gl.getUniformLocation(program, 
-       "lightPosition"),flatten(lightPosition) );
-    gl.uniform1f( gl.getUniformLocation(program, 
-       "shininess"),materialShininess );
-}
+	var diffuseProduct = mult(lightDiffuse, mDiffuse);
+	var specularProduct = mult(lightSpecular, mSpecular);
+
+	gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"), flatten(ambientProduct));
+	gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
+	gl.uniform4fv(gl.getUniformLocation(program, "specularProduct"), flatten(specularProduct));	
+	gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
+	gl.uniform1f(gl.getUniformLocation(program, "shininess"), materialShininess);
+};
 
 var keyPressed = function(e)
 {

@@ -36,8 +36,7 @@ var ocean = function()
 			}
 		}
 		
-		var index = numCastlePoints;
-		
+		//var index = numCastlePoints;
 	};
 	
 	var sample = function(x, y)
