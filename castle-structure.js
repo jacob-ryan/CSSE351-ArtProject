@@ -4,7 +4,6 @@ var structure = function()
 	var materialDiffuse = vec4( 0.8, 0.8, 0.8, 1.0 );
 	var materialSpecular = vec4( 0.8, 0.8, 0.8, 1.0 );
 	var materialShininess = 80.0;
-	var scale = 1 / 500;
 	
 	var render = function()
 	{
