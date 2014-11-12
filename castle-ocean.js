@@ -2,11 +2,16 @@ var ocean = function()
 {
 	var points;
 	var divisions = 20;
-	
+
+	var materialAmbient = vec4( 0.2, 0.2, 0.2, 1.0 );
+	var materialDiffuse = vec4( 0.0, 0.5, 1.0, 1.0 );
+	var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
+	var materialShininess = 10.0;
+
 	var render = function()
 	{
 		points = [];
-		
+
 		var step = 1.0 / divisions;
 		for (var x = 0; x <= 1.0 - step; x += step)
 		{
@@ -20,28 +25,39 @@ var ocean = function()
 				var y3 = y + step;
 				var x4 = x + step;
 				var y4 = y + step;
-				
+
 				var z1 = sample(x1, y1);
 				var z2 = sample(x2, y2);
 				var z3 = sample(x3, y3);
 				var z4 = sample(x4, y4);
-				
+
 				points.push(vec3(x1, y1, z1));
 				points.push(vec3(x3, y3, z3));
 				points.push(vec3(x2, y2, z2));
-				
+
 				points.push(vec3(x4, y4, z4));
 				points.push(vec3(x2, y2, z2));
 				points.push(vec3(x3, y3, z3));
 			}
 		}
-		
-		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+
+		setLighting(materialAmbient, materialDiffuse, materialSpecular, materialShininess);
+		var t = mat4 (1, 0.0, 0.0, -0.25,
+				   0.0, 1, 0.0, 0,
+				   0.0, 0.0, 1, 0,
+				   0.0, 0.0, 0.0, 1.0);
+		//modelViewMatrix = mult(lookingMatrix, t);
+		gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
+
+		gl.uniform4fv(colorLoc, vec4(1.0, 0.0, 0.0, 1.0));
+		gl.uniform1i(lightedLoc, 1);
+
+		/*gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
 		gl.bufferSubData(gl.ARRAY_BUFFER, castleByteOffset, flatten(points));
-		
-		gl.drawArrays(gl.TRIANGLES, castleByteOffset, points.length);
+
+		gl.drawArrays(gl.TRIANGLES, castleByteOffset, points.length);*/
 	};
-	
+
 	var sample = function(x, y)
 	{
 		var t = (new Date()).getTime() / 1000;
@@ -54,7 +70,7 @@ var ocean = function()
 		var total = 0.2 * level1 + 0.1 * level2;
 		return total;
 	};
-	
+
 	return {
 		render: render
 	};
