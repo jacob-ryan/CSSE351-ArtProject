@@ -132,19 +132,7 @@ function makeSphere(r, bands, cx, cy, cz) {
 
 function makeCube(size, cx, cy, cz) {
 	var hs = size / 2; // half-size
-	var n = vec4(0, 0, 0, 1);
-	var v1 = vec4(0, 0, 0, 1);
-	var v2 = vec4(0, 0, 0, 1);
-	var p1 = vec3(0, 0, 0);
-	var p2 = vec3(0, 0, 0);
-	var p3 = vec3(0, 0, 0);
 	
-	p1 = vec3(cx + hs, cy + hs, cz - hs);
-	p2 = vec3(cx - hs, cy + hs, cz - hs);
-	p3 = vec3(cx - hs, cy - hs, cz - hs);
-	v1 = vec4(p1[0] - p2[0], p1[1] - p2[1], p1[2] - p2[2], 1);
-	v2 = vec4(p2[0] - p3[0], p2[1] - p3[1], p2[2] - p3[2], 1);
-	n = vec4(cross(v1, v2), 1);
 	//front
 	pointsArray.push(vec4(cx + hs, cy + hs, cz - hs));
 	pointsArray.push(vec4(cx - hs, cy + hs, cz - hs));
@@ -152,13 +140,6 @@ function makeCube(size, cx, cy, cz) {
 	pointsArray.push(vec4(cx - hs, cy - hs, cz - hs));
 	pointsArray.push(vec4(cx + hs, cy - hs, cz - hs));
 	pointsArray.push(vec4(cx + hs, cy + hs, cz - hs));
-	p1 = vec3(cx + hs, cy + hs, cz - hs);
-	p2 = vec3(cx - hs, cy + hs, cz - hs);
-	p3 = vec3(cx - hs, cy - hs, cz - hs);
-	v1 = vec4(p1[0] - p2[0], p1[1] - p2[1], p1[2] - p2[2], 1);
-	v2 = vec4(p2[0] - p3[0], p2[1] - p3[1], p2[2] - p3[2], 1);
-	n = vec4(cross(v1, v2), 1);
-	//for (var i = 0; i < 6; i++) { normalsArray.push(n); }
 	//back
 	pointsArray.push(vec4(cx - hs, cy - hs, cz + hs));
 	pointsArray.push(vec4(cx + hs, cy - hs, cz + hs));
@@ -166,13 +147,6 @@ function makeCube(size, cx, cy, cz) {
 	pointsArray.push(vec4(cx + hs, cy + hs, cz + hs));
 	pointsArray.push(vec4(cx - hs, cy + hs, cz + hs));
 	pointsArray.push(vec4(cx - hs, cy - hs, cz + hs));
-	p1 = vec3(cx - hs, cy - hs, cz + hs);
-	p2 = vec3(cx + hs, cy - hs, cz + hs);
-	p3 = vec3(cx + hs, cy + hs, cz + hs);
-	v1 = vec4(p1[0] - p2[0], p1[1] - p2[1], p1[2] - p2[2], 1);
-	v2 = vec4(p2[0] - p3[0], p2[1] - p3[1], p2[2] - p3[2], 1);
-	n = vec4(cross(v2, v1), 1);
-	//for (var i = 0; i < 6; i++) { normalsArray.push(n); }
 	//top
 	pointsArray.push(vec4(cx + hs, cy + hs, cz - hs));
 	pointsArray.push(vec4(cx - hs, cy + hs, cz - hs));
@@ -202,6 +176,7 @@ function makeCube(size, cx, cy, cz) {
 	pointsArray.push(vec4(cx + hs, cy + hs, cz - hs));
 	pointsArray.push(vec4(cx + hs, cy - hs, cz - hs));
 	normalsArray = pointsArray;
+	fireworkIndex = index;
 	index += 36;
 	gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
 	gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
