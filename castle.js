@@ -36,6 +36,7 @@ var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
 
 var nBuffer;
 var vBuffer;
+var texture;
 var pointsArray = [];
 var normalsArray = [];
 var program;
@@ -44,6 +45,7 @@ var modelViewMatrix, projectionMatrix;
 var modelViewMatrixLoc, projectionMatrixLoc;
 var colorLoc;
 var lightedLoc;
+var enableTextureLoc;
 
 var init = function()
 {
@@ -66,9 +68,7 @@ var init = function()
 	initShaderVariables(program);
 	
 	structure.makeCastle();
-	console.log(pointsArray.length);
 	makeCube(0.005, 0, 0, 0);
-	console.log(pointsArray.length);
 	
 	canvas.requestPointerLock = canvas.requestPointerLock ||
 								canvas.mozRequestPointerLock ||
@@ -126,9 +126,9 @@ var render = function()
 	gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
 	gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
 
-	ocean.render();
 	structure.render();
 	fireworks.render();
+	ocean.render();
 };
 
 var initShaderVariables = function(program)
@@ -152,7 +152,26 @@ var initShaderVariables = function(program)
 	modelViewMatrixLoc = gl.getUniformLocation(program, "modelViewMatrix");
 	projectionMatrixLoc = gl.getUniformLocation(program, "projectionMatrix");
 	colorLoc = gl.getUniformLocation(program, "color");
-	lightedLoc = gl.getUniformLocation(program, "lighted");
+	lightedLoc = gl.getUniformLocation(program, "enableLighting");
+	enableTextureLoc = gl.getUniformLocation(program, "enableTexture");
+	
+	var texSize = 256;
+	var myTexels = new Uint8Array(4*texSize*texSize);
+	for (var i = 0; i < texSize; i += 1)
+	{
+		for (var j = 0; j < texSize; j += 1)
+		{
+			myTexels[4*i*texSize+4*j] = 0;
+			myTexels[4*i*texSize+4*j+1] = 50;
+			myTexels[4*i*texSize+4*j+2] = 100 + Math.floor(Math.random() * (256 - 100));
+			myTexels[4*i*texSize+4*j+3] = 255;
+		}
+	}
+	texture = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+	gl.texImage2D (gl.TEXTURE_2D, 0, gl.RGBA, texSize, texSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, myTexels);
+	gl.generateMipmap( gl.TEXTURE_2D );
+	gl.uniform1i(gl.getUniformLocation(program, "texMap"), 0);
 };
 
 var setLighting = function(mAmbient, mDiffuse, mSpecular, mShininess)
@@ -300,9 +319,19 @@ var makeCube = function(size, cx, cy, cz) {
 	pointsArray.push(vec4(cx + hs, cy + hs, cz + hs, 1));
 	pointsArray.push(vec4(cx + hs, cy + hs, cz - hs, 1));
 	pointsArray.push(vec4(cx + hs, cy - hs, cz - hs, 1));
-	for (var i = 0; i < 36; i += 1) { normalsArray.push(vec4(0, 0, 0, 1)); }
+	
+	for (var i = 0; i < 36; i += 1)
+	{
+		normalsArray.push(vec4(0, 0, 0, 1));
+	}
+	for (var i = 0; i < 1024 * 32; i += 1)
+	{
+		pointsArray.push(vec4(0, 0, 0, 1));
+		normalsArray.push(vec4(0, 1, 0, 1));
+	}
 	fireworkIndex = index;
 	index += 36;
+	
 	gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
 	gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
 

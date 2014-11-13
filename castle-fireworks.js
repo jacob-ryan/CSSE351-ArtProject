@@ -78,8 +78,8 @@ var fireworks = function()
 		
 			gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
 			var c = sparkColors[i];
-			gl.uniform4fv (colorLoc, c);
-			gl.uniform1i (lightedLoc, 0);
+			gl.uniform4fv(colorLoc, c);
+			gl.uniform1i(lightedLoc, false);
 			gl.drawArrays(gl.TRIANGLES, fireworkIndex, 36);
 			// for( var j=fireworkIndex; j<index; j+=3) {
 				// gl.drawArrays( gl.TRIANGLES, j, 3 );
