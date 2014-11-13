@@ -27,6 +27,7 @@ var pitch = 0.0;
 var velocity = vec3(0.0, 0.0, 0.0);
 var forwardVector;
 var rightVector;
+var invert = false;
 
 //lighting
 var lightPosition = vec4(1.0, 1.0, 1.0, 1.0);
@@ -78,8 +79,8 @@ var init = function()
 	//add castle to the scene
 	structure.makeCastle();
 	//add firework cube to the scene
-	fireworks.makeCube(0.005, 0, 0, 0);
-	
+	//fireworks.makeCube(0.005, 0, 0, 0);
+	fireworks.makeSphere(0.005, 6, 0, 0, 0);
 	//camera controls
 	canvas.requestPointerLock = canvas.requestPointerLock ||
 								canvas.mozRequestPointerLock ||
@@ -92,6 +93,14 @@ var init = function()
 			document.addEventListener("mousemove", mouseMoved, false);
 			document.addEventListener("keydown", keyDown, true);
 			document.addEventListener("keyup", keyUp, true);
+			document.getElementById("btnInvert").onclick = function(){
+				if (invert) {
+					invert = false;
+				}
+				else {
+					invert = true;
+				}
+			};
 		};
 	}
 	else
@@ -287,7 +296,14 @@ var mouseMoved = function(e)
 	yaw -= dx * 0.1;
 	yaw = yaw % 360;
 
-	pitch += dy * 0.1;
+	
+	
+	if (invert) {
+		pitch += dy * 0.1;
+	}
+	else {
+		pitch -= dy * 0.1;
+	}
 	pitch = Math.min(pitch, 80.0);
 	pitch = Math.max(pitch, -80.0);
 };

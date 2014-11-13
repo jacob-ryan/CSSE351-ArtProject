@@ -14,6 +14,7 @@ var fireworks = function()
 	var sparkColors = [];
 	var sparkAngles = [];
 	var sparkCenters = [];
+	var fireworkBufferSize = 36;
 	
 	var render = function()
 	{
@@ -88,7 +89,7 @@ var fireworks = function()
 			gl.uniform1i(lightedLoc, false);
 			
 			//draw the firework particle
-			gl.drawArrays(gl.TRIANGLES, fireworkIndex, 36);
+			gl.drawArrays(gl.TRIANGLES, fireworkIndex, fireworkBufferSize);
 		}
 		//remove dead sparks from the scene
 		for (var i = removeSparks.length - 1; i >= 0; i--) {
@@ -107,7 +108,7 @@ var fireworks = function()
 	function spawnFirework(n) {
 		//pick a random hue and center for the firework
 		var hue = Math.random();
-		var center = vec3(Math.random() * 1 - 0.5, Math.random() * 0.75 + 0.25, Math.random());
+		var center = vec3(Math.random() * 1 - 0.5, Math.random() * 0.25 + 0.75, Math.random());
 		
 		//change color of light source, move it to the center of this firework
 		var lc = hslToRgb(hue, 1, Math.random() * 0.4 + 0.3);
@@ -231,9 +232,85 @@ var fireworks = function()
 		gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
 	}
 	
+	var makeSphere = function(r, bands, cx, cy, cz) {
+		fireworkIndex = index;
+		var norms = [];
+		var points = [];
+		for (var latNumber = 0; latNumber <= bands; latNumber++) {
+			var theta = latNumber * Math.PI / bands;
+			var sinTheta = Math.sin(theta);
+			var cosTheta = Math.cos(theta);
+
+			for (var longNumber = 0; longNumber <= bands; longNumber++) {
+				var phi = longNumber * 2 * Math.PI / bands;
+				var sinPhi = Math.sin(phi);
+				var cosPhi = Math.cos(phi);
+				
+				var x = cosPhi * sinTheta;
+				var y = cosTheta;
+				var z = sinPhi * sinTheta;
+				
+				// normalsArray.push(cx + x);
+				// normalsArray.push(cy + y);
+				// normalsArray.push(cz + z);
+				norms.push(vec4(
+								  cx + x,
+								  cy + y,
+								  cz + z, 1.0));
+				points.push(vec4(
+								 cx - r * x,
+								 cy - r * y,
+								 cz - r * z, 1.0));
+			}
+			
+		}
+		for (var latNumber = 0; latNumber < bands; latNumber++) {
+			for (var longNumber = 0; longNumber < bands; longNumber++) {
+				var first = (latNumber * (bands + 1)) + longNumber;
+				var second = first + bands + 1;
+				// indexArray.push(first);
+				// indexArray.push(second);
+				// indexArray.push(first + 1);
+
+				// indexArray.push(second);
+				// indexArray.push(second + 1);
+				// indexArray.push(first + 1);
+				normalsArray.push(norms[first]);
+				normalsArray.push(norms[second]);
+				normalsArray.push(norms[first + 1]);
+				
+				normalsArray.push(norms[second]);
+				normalsArray.push(norms[second + 1]);
+				normalsArray.push(norms[first + 1]);
+				
+				pointsArray.push(points[first]);
+				pointsArray.push(points[second]);
+				pointsArray.push(points[first + 1]);
+				
+				pointsArray.push(points[second]);
+				pointsArray.push(points[second + 1]);
+				pointsArray.push(points[first + 1]);
+				
+				index += 6;
+			}
+		}
+		fireworkBufferSize = index - fireworkIndex;
+		for (var i = 0; i < 1024 * 32; i += 1)
+		{
+			pointsArray.push(vec4(0, 0, 0, 1));
+			normalsArray.push(vec4(0, 1, 0, 1));
+		}
+		gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
+		gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
+	}
+	
 	return {
 		render: render,
-		makeCube: makeCube
+		makeCube: makeCube,
+		makeSphere: makeSphere
 	};
 	
 }();
