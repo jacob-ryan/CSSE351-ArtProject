@@ -20,12 +20,12 @@ for (var i = 0; i < keyNames.length; i += 1)
 //camera transform info
 var cx = 0.0;
 var cy = 0.3;
-var cz = -1.0;
-var yaw = 0.0;
+var cz = 2.0;
+var yaw = 180;
 var pitch = 0.0;
 var velocity = vec3(0.0, 0.0, 0.0);
-var forwardVector;
-var rightVector;
+var forwardVector = vec3(0.0, 0.0, 0.0);
+var rightVector = vec3(0.0, 0, 0);
 
 //lighting
 var lightPosition = vec4(1.0, 1.0, 1.0, 1.0);
@@ -218,7 +218,7 @@ var keyUp = function(e)
 //use keys to translate camera based on current rotation
 var checkKeyPresses = function()
 {
-	var factor = 0.02;
+	var factor = 0.01;
 	
 	if (keyStates["forward"].pressed)
 	{
@@ -267,7 +267,7 @@ var mouseMoved = function(e)
 	yaw -= dx * 0.1;
 	yaw = yaw % 360;
 
-	pitch += dy * 0.1;
+	pitch -= dy * 0.1;
 	pitch = Math.min(pitch, 80.0);
 	pitch = Math.max(pitch, -80.0);
 };
