@@ -91,22 +91,32 @@ void main()
 }
 </script>
 </head>
-<body bgcolor="a0ccff">
-<!--A 2X3 table with 2 Disney characters, a canvas, and our logo.-->
-<table style="width:100%">
-  <tr>
-    <th><img src="Flynn.png" width="525"></th>
-    <th><canvas id="gl-canvas" width="1200" height="800">
-	Your browser does not support HTML5.</canvas></th>
-	<th><img src="Rapunzel.png" width="525"></th>
-  </tr>
-  <tr>
-    <th></th>
-    <th><img src="DisneyTitle.png"></td>
-    <th></th>
-  </tr>
-</table>
-<!--Plays a song continuously looping through it.-->
-<embed name="disneymusic" src="WDsong.mp3" loop="true" hidden="true" autostart="true" />
+
+<body style="background-color: #a0ccff;">
+	<!--A 2X3 table with 2 Disney characters, a canvas, and our logo.-->
+	<table style="width: 100%;">
+		<tr>
+			<td rowspan="2" style="text-align: right; width: 50%;">
+				<img src="Flynn.png" style="width: 300px;">
+			</td>
+			<td style="text-align: center;">
+				<img src="DisneyTitle.png" height="200">
+				<br>
+				<audio controls>
+					<source src="WDsong.mp3" type="audio/mpeg">
+				</audio>
+			</td>
+			<td rowspan="2" style="text-align: left; width: 50%;">
+				<img src="Rapunzel.png" style="width: 300px;">
+			</td>
+		</tr>
+		<tr>
+			<td style="text-align: center;">
+				<canvas id="gl-canvas" width="1000" height="700" style="width: 1000px; height: 700px;">
+					Your browser does not support HTML5.
+				</canvas>
+			</td>
+		</tr>
+	</table>
 </body>
 </html>
