@@ -76,10 +76,22 @@ void main()
 }
 </script>
 </head>
-<body>
+<body bgcolor="a0ccff">
+<!--A 2X3 table with 2 Disney characters, a canvas, and our logo.-->
+<table style="width:100%">
+  <tr>
+    <th><img src="Flynn.png" width="525"></th>
+    <th><canvas id="gl-canvas" width="1200" height="800">
+	Your browser does not support HTML5.</canvas></th>
+	<th><img src="Rapunzel.png" width="525"></th>
+  </tr>
+  <tr>
+    <th></th>
+    <th><img src="DisneyTitle.png"></td>
+    <th></th>
+  </tr>
+</table>
+<!--Plays a song continuously looping through it.-->
 <embed name="disneymusic" src="WDsong.mp3" loop="true" hidden="true" autostart="true" />
-<canvas id="gl-canvas" width="1200" height="800">
-	Your browser does not support HTML5.
-</canvas>
 </body>
 </html>
