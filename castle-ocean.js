@@ -2,7 +2,7 @@ var ocean = function()
 {
 	var points;
 	var divisions = 20;
-
+	//ocean material parameters
 	var materialAmbient = vec4( 0.2, 0.2, 0.2, 1.0 );
 	var materialDiffuse = vec4( 0.0, 0.5, 1.0, 1.0 );
 	var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
