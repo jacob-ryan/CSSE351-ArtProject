@@ -1,3 +1,4 @@
+//Tai Enrico, Michael Laritz, Jonathan Jungck, Jacob Ryan
 var ocean = function()
 {
 	var numPoints;

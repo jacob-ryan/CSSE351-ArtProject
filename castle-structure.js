@@ -1,3 +1,4 @@
+//Tai Enrico, Michael Laritz, Jonathan Jungck, Jacob Ryan
 var structure = function()
 {
 	//castle's buffer size and starting index location in the buffer
