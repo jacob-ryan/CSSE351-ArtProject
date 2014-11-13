@@ -278,6 +278,15 @@ var checkKeyPresses = function()
 	cy += factor * velocity[1];
 	cz += factor * velocity[2];
 	
+	var len = length(vec3(cx, cy, cz));
+	if (len > 8)
+	{
+		var cNew = scale(8 / len, vec3(cx, cy, cz));
+		cx = cNew[0];
+		cy = cNew[1];
+		cz = cNew[2];
+	}
+	
 	velocity = scale(0.75, velocity);
 };
 
