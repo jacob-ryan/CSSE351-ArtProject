@@ -9,6 +9,7 @@ var canvas;
 var aspect;
 var gl;
 
+//keyboard controls info
 var keyStates = {};
 var keyNames = ["forward", "backward", "left", "right", "up", "down"];
 var keyCodes = [87, 83, 65, 68, 81, 69];
@@ -17,32 +18,39 @@ for (var i = 0; i < keyNames.length; i += 1)
 	keyStates[keyNames[i]] = { code: keyCodes[i], pressed: false };
 }
 
+//camera transform info
 var cx = 0.0;
 var cy = 0.3;
-var cz = -1.0;
-var yaw = 0.0;
+var cz = 2.0;
+var yaw = 180;
 var pitch = 0.0;
 var velocity = vec3(0.0, 0.0, 0.0);
 var forwardVector;
 var rightVector;
 
-var index = 0;
-var fireworkIndex = 0;
-
+//lighting
 var lightPosition = vec4(1.0, 1.0, 1.0, 1.0);
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
 var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
 var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
 
+//buffer info
 var nBuffer;
 var vBuffer;
 var texture;
 var pointsArray = [];
 var normalsArray = [];
+var index = 0;
+var fireworkIndex = 0;
+
+//shader program
 var program;
+
+//perspective projection info
 var lookingMatrix;
 var modelViewMatrix, projectionMatrix;
 var modelViewMatrixLoc, projectionMatrixLoc;
+
 var colorLoc;
 var lightedLoc;
 var enableTextureLoc;
@@ -67,9 +75,12 @@ var init = function()
 	gl.useProgram(program);
 	initShaderVariables(program);
 	
+	//add castle to the scene
 	structure.makeCastle();
-	makeCube(0.005, 0, 0, 0);
+	//add firework cube to the scene
+	fireworks.makeCube(0.005, 0, 0, 0);
 	
+	//camera controls
 	canvas.requestPointerLock = canvas.requestPointerLock ||
 								canvas.mozRequestPointerLock ||
 								canvas.webkitRequestPointerLock;
@@ -97,9 +108,11 @@ var render = function()
 	window.requestAnimationFrame(render);
 
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
+	
+	//check if any keys are being pressed to move the camera
 	checkKeyPresses();
 	
+	//move/rotate the camera
 	var eye = vec3(cx, cy, cz);
 	var fx = Math.sin(radians(yaw)) * Math.cos(radians(pitch));
 	var fy = Math.sin(radians(pitch));
@@ -113,6 +126,7 @@ var render = function()
 	rightVector = vec3(rx, ry, rz);
 	rightVector = normalize(rightVector);
 	
+	//set up initial model view and projection matrices for this frame
 	var at = add(eye, forwardVector);
 	var up = vec3(0.0, 1.0, 0.0);
 	lookingMatrix = lookAt(eye, at, up);
@@ -126,6 +140,7 @@ var render = function()
 	gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
 	gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
 
+	//render scene props
 	structure.render();
 	fireworks.render();
 	ocean.render();
@@ -174,6 +189,7 @@ var initShaderVariables = function(program)
 	gl.uniform1i(gl.getUniformLocation(program, "texMap"), 0);
 };
 
+//set the current lighting to be used by the shader according to the material parameters
 var setLighting = function(mAmbient, mDiffuse, mSpecular, mShininess)
 {
 	var ambientProduct = mult(lightAmbient, mAmbient);
@@ -219,9 +235,10 @@ var keyUp = function(e)
 	}
 };
 
+//use keys to translate camera based on current rotation
 var checkKeyPresses = function()
 {
-	var factor = 0.02;
+	var factor = 0.01;
 	
 	if (keyStates["forward"].pressed)
 	{
@@ -255,6 +272,7 @@ var checkKeyPresses = function()
 	velocity = scale(0.75, velocity);
 };
 
+//use mouse to rotate camera
 var mouseMoved = function(e)
 {
 	var dx = e.movementX ||
@@ -273,68 +291,3 @@ var mouseMoved = function(e)
 	pitch = Math.min(pitch, 80.0);
 	pitch = Math.max(pitch, -80.0);
 };
-
-//used to add a cube to the buffer to be used for the firework particle
-var makeCube = function(size, cx, cy, cz) {
-	var hs = size / 2; // half-size
-	//front
-	pointsArray.push(vec4(cx + hs, cy + hs, cz - hs, 1));
-	pointsArray.push(vec4(cx - hs, cy + hs, cz - hs, 1));
-	pointsArray.push(vec4(cx - hs, cy - hs, cz - hs, 1));
-	pointsArray.push(vec4(cx - hs, cy - hs, cz - hs, 1));
-	pointsArray.push(vec4(cx + hs, cy - hs, cz - hs, 1));
-	pointsArray.push(vec4(cx + hs, cy + hs, cz - hs, 1));
-	//back
-	pointsArray.push(vec4(cx - hs, cy - hs, cz + hs, 1));
-	pointsArray.push(vec4(cx + hs, cy - hs, cz + hs, 1));
-	pointsArray.push(vec4(cx + hs, cy + hs, cz + hs, 1));
-	pointsArray.push(vec4(cx + hs, cy + hs, cz + hs, 1));
-	pointsArray.push(vec4(cx - hs, cy + hs, cz + hs, 1));
-	pointsArray.push(vec4(cx - hs, cy - hs, cz + hs, 1));
-	//top
-	pointsArray.push(vec4(cx + hs, cy + hs, cz - hs, 1));
-	pointsArray.push(vec4(cx - hs, cy + hs, cz - hs, 1));
-	pointsArray.push(vec4(cx - hs, cy + hs, cz + hs, 1));
-	pointsArray.push(vec4(cx - hs, cy + hs, cz + hs, 1));
-	pointsArray.push(vec4(cx + hs, cy + hs, cz + hs, 1));
-	pointsArray.push(vec4(cx + hs, cy + hs, cz - hs, 1));
-	//bottom
-	pointsArray.push(vec4(cx - hs, cy - hs, cz + hs, 1));
-	pointsArray.push(vec4(cx + hs, cy - hs, cz + hs, 1));
-	pointsArray.push(vec4(cx + hs, cy - hs, cz - hs, 1));
-	pointsArray.push(vec4(cx + hs, cy - hs, cz - hs, 1));
-	pointsArray.push(vec4(cx - hs, cy - hs, cz - hs, 1));
-	pointsArray.push(vec4(cx - hs, cy - hs, cz + hs, 1));
-	//left
-	pointsArray.push(vec4(cx - hs, cy + hs, cz + hs, 1));
-	pointsArray.push(vec4(cx - hs, cy + hs, cz - hs, 1));
-	pointsArray.push(vec4(cx - hs, cy - hs, cz - hs, 1));
-	pointsArray.push(vec4(cx - hs, cy - hs, cz - hs, 1));
-	pointsArray.push(vec4(cx - hs, cy - hs, cz + hs, 1));
-	pointsArray.push(vec4(cx - hs, cy + hs, cz + hs, 1));
-	//right
-	pointsArray.push(vec4(cx + hs, cy - hs, cz - hs, 1));
-	pointsArray.push(vec4(cx + hs, cy - hs, cz + hs, 1));
-	pointsArray.push(vec4(cx + hs, cy + hs, cz + hs, 1));
-	pointsArray.push(vec4(cx + hs, cy + hs, cz + hs, 1));
-	pointsArray.push(vec4(cx + hs, cy + hs, cz - hs, 1));
-	pointsArray.push(vec4(cx + hs, cy - hs, cz - hs, 1));
-	
-	for (var i = 0; i < 36; i += 1)
-	{
-		normalsArray.push(vec4(0, 0, 0, 1));
-	}
-	for (var i = 0; i < 1024 * 32; i += 1)
-	{
-		pointsArray.push(vec4(0, 0, 0, 1));
-		normalsArray.push(vec4(0, 1, 0, 1));
-	}
-	fireworkIndex = index;
-	index += 36;
-	
-	gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
-	gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
-
-	gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
-}
