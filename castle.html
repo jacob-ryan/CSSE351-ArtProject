@@ -1,5 +1,5 @@
-<!--Tai Enrico, Michael Laritz, Jonathan Jungck, Jacob Ryan-->
 <!DOCTYPE html>
+<!--Tai Enrico, Michael Laritz, Jonathan Jungck, Jacob Ryan-->
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
@@ -21,18 +21,24 @@
 attribute vec4 vPosition;
 attribute vec4 vNormal;
 
-varying vec3 N, L, E;
+varying vec3 N, L1, L2, L3, E;
 varying vec4 fPosition;
 
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
-uniform vec4 lightPosition;
+uniform vec4 lightPosition1;
+uniform vec4 lightPosition2;
+uniform vec4 lightPosition3;
 
 void main()
 {
 	vec3 pos = -(modelViewMatrix * vPosition).xyz;
-	vec3 light = lightPosition.xyz;
-	L = normalize( light - pos );
+	vec3 light1 = lightPosition1.xyz;
+	vec3 light2 = lightPosition2.xyz;
+	vec3 light3 = lightPosition3.xyz;
+	L1 = normalize(light1 - pos);
+	L2 = normalize(light2 - pos);
+	L3 = normalize(light3 - pos);
 	E = -pos;
 	N = normalize((modelViewMatrix * vNormal).xyz);
 	gl_Position = projectionMatrix * modelViewMatrix * vPosition;
@@ -48,7 +54,7 @@ uniform vec4 diffuseProduct;
 uniform vec4 specularProduct;
 uniform float shininess;
 
-varying vec3 N, L, E;
+varying vec3 N, L1, L2, L3, E;
 varying vec4 fPosition;
 
 uniform vec4 color;
@@ -62,25 +68,47 @@ void main()
 	vec4 fColor;
 	if (enableLighting)
 	{
-		vec3 H = normalize(L + E);
+		vec3 H1 = normalize(L1 + E);
+		vec3 H2 = normalize(L2 + E);
+		vec3 H3 = normalize(L3 + E);
 		vec4 ambient = ambientProduct;
 
-		float Kd = max(dot(L, N), 0.0);
-		vec4 diffuse = Kd * diffuseProduct;
+		float kd1 = max(dot(L1, N), 0.0);
+		float kd2 = max(dot(L2, N), 0.0);
+		float kd3 = max(dot(L3, N), 0.0);
+		vec4 diffuse1 = kd1 * diffuseProduct;
+		vec4 diffuse2 = kd2 * diffuseProduct;
+		vec4 diffuse3 = kd3 * diffuseProduct;
 		if (enableTexture)
 		{
-			diffuse = Kd * texture2D(texMap, fPosition.xy);
+			vec2 texPos = vec2(fPosition.x + fPosition.z, fPosition.y + fPosition.z);
+			diffuse1 = diffuse1 * texture2D(texMap, vec2(fPosition.x + fPosition.z, fPosition.y + fPosition.z));
+			diffuse2 = diffuse2 * texture2D(texMap, fPosition.xy);
+			diffuse3 = diffuse3 * texture2D(texMap, fPosition.xy);
 		}
 
-		float Ks = pow(max(dot(N, H), 0.0), shininess);
-		vec4 specular = Ks * specularProduct;
+		float ks1 = pow(max(dot(N, H1), 0.0), shininess);
+		float ks2 = pow(max(dot(N, H2), 0.0), shininess);
+		float ks3 = pow(max(dot(N, H3), 0.0), shininess);
+		vec4 specular1 = ks1 * specularProduct;
+		vec4 specular2 = ks2 * specularProduct;
+		vec4 specular3 = ks3 * specularProduct;
 
-		if (dot(L, N) < 0.0)
+		if (dot(L1, N) < 0.0)
 		{
-			specular = vec4(0.0, 0.0, 0.0, 1.0);
+			specular1 = vec4(0.0, 0.0, 0.0, 1.0);
+		}
+		if (dot(L2, N) < 0.0)
+		{
+			specular2 = vec4(0.0, 0.0, 0.0, 1.0);
+		}
+		if (dot(L3, N) < 0.0)
+		{
+			specular3 = vec4(0.0, 0.0, 0.0, 1.0);
 		}
 
-		fColor = ambient + diffuse + specular;
+		//fColor = ambient + diffuse1 + diffuse2 + diffuse3 + specular1 + specular2 + specular3;
+		fColor = ambient + diffuse1 + specular1;
 		fColor.a = 1.0;
 	}
 	else

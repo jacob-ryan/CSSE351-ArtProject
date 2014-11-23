@@ -2,10 +2,10 @@
 var ocean = function()
 {
 	var numPoints;
-	var divisions = 16;
+	var divisions = 20;
 
-	var materialAmbient = vec4(0.0, 0.0, 0.0, 1.0);
-	var materialDiffuse = vec4(0.0, 0.5, 0.5, 1.0);
+	var materialAmbient = vec4(0.2, 0.2, 0.2, 1.0);
+	var materialDiffuse = vec4(0.0, 1.0, 1.0, 1.0);
 	var materialSpecular = vec4(1.0, 1.0, 1.0, 1.0);
 	var materialShininess = 1000.0;
 
@@ -16,17 +16,23 @@ var ocean = function()
 		//lightDiffuse = vec4(1, 1, 1, 1.0);
 		//lightPosition = vec4(0, 1, -3, 1.0);
 		setLighting(materialAmbient, materialDiffuse, materialSpecular, materialShininess);
-		var t = mat4(2.0, 0.0, 0.0, -1.0,
-					0.0, 2.0, 0.0, 0.0,
-					0.0, 0.0, 2.0, 0.75,
+		var t = mat4(5.0, 0.0, 0.0, -2.5,
+					0.0, 5.0, 0.0, 0.0,
+					0.0, 0.0, 5.0, 0.75,
 					0.0, 0.0, 0.0, 1.0);
 		modelViewMatrix = mult(lookingMatrix, t);
 		gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
 
 		gl.uniform1i(lightedLoc, true);
 		gl.uniform1i(enableTextureLoc, true);
-		gl.drawArrays(gl.TRIANGLES, pointsArray.length - 1024 * 32, numPoints);
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+		gl.uniform1i(gl.getUniformLocation(program, "texMap"), 0);
+		
+		gl.drawArrays(gl.TRIANGLES, bufferIndex, numPoints);
 		//gl.uniform1i(enableTextureLoc, false);
+		
+		gl.bindTexture(gl.TEXTURE_2D, textureCastle);
+		gl.uniform1i(gl.getUniformLocation(program, "texMap"), 0);
 	};
 	
 	var updateWaves = function()
@@ -77,7 +83,7 @@ var ocean = function()
 		}
 		numPoints = points.length;
 		
-		var offset = (pointsArray.length - 1024 * 32) * 4 * 4;
+		var offset = bufferIndex * 4 * 4;
 		gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
 		gl.bufferSubData(gl.ARRAY_BUFFER, offset, flatten(points));
 		gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
@@ -106,10 +112,10 @@ var ocean = function()
 	var sample = function(x, y)
 	{
 		var t = (new Date()).getTime() / 1000;
-		var x1 = 8 * x + 1.0 * t;
-		var y1 = 8 * y + 0.5 * t;
+		var x1 = 16 * x + 1.0 * t;
+		var y1 = 16 * y + 1.0 * t;
 		var height = Math.cos(x1) * Math.sin(y1);
-		return height * 0.05;
+		return height * 0.02;
 	};
 
 	return {

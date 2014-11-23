@@ -8,8 +8,9 @@
 var canvas;
 var aspect;
 var gl;
+var program;
 
-//keyboard controls info
+// Set up names for each of the keys and objects to track their state.
 var keyStates = {};
 var keyNames = ["forward", "backward", "left", "right", "up", "down"];
 var keyCodes = [87, 83, 65, 68, 81, 69];
@@ -18,7 +19,7 @@ for (var i = 0; i < keyNames.length; i += 1)
 	keyStates[keyNames[i]] = { code: keyCodes[i], pressed: false };
 }
 
-//camera transform info
+// Camera location and orientation (yaw/ptch, no roll), and a moving velocity.
 var cx = 0.0;
 var cy = 0.3;
 var cz = 2.0;
@@ -27,7 +28,7 @@ var pitch = 0.0;
 var velocity = vec3(0.0, 0.0, 0.0);
 var forwardVector;
 var rightVector;
-var invert = false;
+var invert = true;
 
 //lighting
 var lightPosition = vec4(1.0, 1.0, 1.0, 1.0);
@@ -35,17 +36,12 @@ var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
 var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
 var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
 
-//buffer info
+// Buffer info
 var nBuffer;
 var vBuffer;
 var texture;
-var pointsArray = [];
-var normalsArray = [];
-var index = 0;
-var fireworkIndex = 0;
-
-//shader program
-var program;
+var textureCastle;
+var bufferIndex = 0;
 
 //perspective projection info
 var lookingMatrix;
@@ -74,14 +70,21 @@ var init = function()
 
 	program = initShaders(gl, "vertex-shader", "fragment-shader");
 	gl.useProgram(program);
-	initShaderVariables(program);
+	initShaderVariables();
 	
 	//add castle to the scene
 	structure.makeCastle();
 	//add firework cube to the scene
 	//fireworks.makeCube(0.005, 0, 0, 0);
 	fireworks.makeSphere(0.005, 6, 0, 0, 0);
-	//camera controls
+	
+	// Set up camera controls by adding event listeners for
+	// key presses and releases, as well as mouse movement.
+	// Also try to enable Pointer Lock when the canvas is
+	// clicked on, which locks the cursor inside the canvas
+	// and hides it, allowing the user to move the camera as much
+	// as they want without the cursor moving to the edge of the
+	// screen and getting stuck.
 	canvas.requestPointerLock = canvas.requestPointerLock ||
 								canvas.mozRequestPointerLock ||
 								canvas.webkitRequestPointerLock;
@@ -155,11 +158,13 @@ var render = function()
 	ocean.render();
 };
 
-var initShaderVariables = function(program)
+var initShaderVariables = function()
 {
+	var bufferSize = 1024 * 1024 * 4 * 4;
+	
 	nBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW);
+	gl.bufferData(gl.ARRAY_BUFFER, bufferSize, gl.STATIC_DRAW);
 
 	var vNormal = gl.getAttribLocation(program, "vNormal");
 	gl.vertexAttribPointer(vNormal, 4, gl.FLOAT, false, 0, 0);
@@ -167,7 +172,7 @@ var initShaderVariables = function(program)
 
 	vBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
+	gl.bufferData(gl.ARRAY_BUFFER, bufferSize, gl.STATIC_DRAW);
 	
 	var vPosition = gl.getAttribLocation(program, "vPosition");
 	gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
@@ -179,7 +184,7 @@ var initShaderVariables = function(program)
 	lightedLoc = gl.getUniformLocation(program, "enableLighting");
 	enableTextureLoc = gl.getUniformLocation(program, "enableTexture");
 	
-	var texSize = 256;
+	var texSize = 512;
 	var myTexels = new Uint8Array(4*texSize*texSize);
 	for (var i = 0; i < texSize; i += 1)
 	{
@@ -193,8 +198,27 @@ var initShaderVariables = function(program)
 	}
 	texture = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, texture);
-	gl.texImage2D (gl.TEXTURE_2D, 0, gl.RGBA, texSize, texSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, myTexels);
-	gl.generateMipmap( gl.TEXTURE_2D );
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, texSize, texSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, myTexels);
+	gl.generateMipmap(gl.TEXTURE_2D);
+	gl.uniform1i(gl.getUniformLocation(program, "texMap"), 0);
+	
+	texSize = 512;
+	myTexels = new Uint8Array(4*texSize*texSize);
+	for (var i = 0; i < texSize; i += 1)
+	{
+		for (var j = 0; j < texSize; j += 1)
+		{
+			var val = 75 + Math.floor(Math.random() * 100);
+			myTexels[4*i*texSize+4*j] = val;
+			myTexels[4*i*texSize+4*j+1] = val;
+			myTexels[4*i*texSize+4*j+2] = val;
+			myTexels[4*i*texSize+4*j+3] = 255;
+		}
+	}
+	textureCastle = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, textureCastle);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, texSize, texSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, myTexels);
+	gl.generateMipmap(gl.TEXTURE_2D);
 	gl.uniform1i(gl.getUniformLocation(program, "texMap"), 0);
 };
 
@@ -208,7 +232,9 @@ var setLighting = function(mAmbient, mDiffuse, mSpecular, mShininess)
 	gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"), flatten(ambientProduct));
 	gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(diffuseProduct));
 	gl.uniform4fv(gl.getUniformLocation(program, "specularProduct"), flatten(specularProduct));
-	gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
+	gl.uniform4fv(gl.getUniformLocation(program, "lightPosition1"), flatten(lightPosition));
+	gl.uniform4fv(gl.getUniformLocation(program, "lightPosition2"), flatten(vec4(1.0, 1.0, 1.0, 1.0)));
+	gl.uniform4fv(gl.getUniformLocation(program, "lightPosition3"), flatten(vec4(1.0, 1.0, 1.0, 1.0)));
 	gl.uniform1f(gl.getUniformLocation(program, "shininess"), mShininess);
 };
 
